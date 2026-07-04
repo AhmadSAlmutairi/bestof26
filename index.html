@@ -494,7 +494,8 @@ async function shareResult(){
   const status = $('shareStatus');
   status.textContent = 'جارٍ تجهيز الصورة...';
   try{
-    const canvas = await html2canvas($('stage'), {backgroundColor:'#FCFCFB', scale:2});
+    if(document.fonts && document.fonts.ready){ await document.fonts.ready; }
+    const canvas = await html2canvas($('stage'), {backgroundColor:'#FCFCFB', scale:2, letterRendering:true, useCORS:true});
     const caption = buildCaption();
     canvas.toBlob(async (blob)=>{
       const file = new File([blob], 'بطولة-الأبطال.png', {type:'image/png'});
