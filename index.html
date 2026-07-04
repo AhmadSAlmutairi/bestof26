@@ -81,11 +81,12 @@
   }
   .line{ position:absolute; background:#AEB4C0; border-radius:2px; }
   .stage-brand{
-    position:absolute; height:40px; display:flex; align-items:center; justify-content:center;
-    font-size:14px; font-weight:700; color:#171923; background:#F3F1EA; border-top:1px solid #E7E5DE;
-    border-radius:0 0 16px 16px;
+    position:absolute; height:44px; display:flex; align-items:center; justify-content:space-around;
+    padding:0 24px; font-size:14px; font-weight:700; color:#171923; background:#F3F1EA;
+    border-top:1px solid #E7E5DE; border-radius:0 0 16px 16px;
   }
-  .stage-brand-handle{ color:#E63946; }
+  .sb-seg{ unicode-bidi:isolate; white-space:nowrap; }
+  .sb-handle{ color:#E63946; }
   .node{
     position:absolute; display:flex; align-items:center; justify-content:center;
     text-align:center; padding:4px 10px; color:#171923; border:1.5px solid #E2E4EA;
@@ -96,7 +97,8 @@
   .node.mid{ font-size:13.5px; }
   .node.future{ color:#C3C6CE; border:1.5px dashed #E2E4EA; font-size:18px; font-weight:400; background:#FAFAF9; box-shadow:none; }
   .node.done{ border-color:#D7DBE3; }
-  .node.lost{ opacity:.35; }
+  .node.lost{ opacity:.4; cursor:pointer; }
+  .node.lost:hover{ opacity:.7; border-color:#9AA1AC; }
   .node.active{
     border-color:var(--accent,#1D4ED8); color:#171923; cursor:pointer; background:#fff;
     box-shadow:0 0 0 4px color-mix(in srgb, var(--accent,#1D4ED8) 18%, transparent), 0 6px 16px rgba(0,0,0,.1);
@@ -146,7 +148,7 @@
     <p class="sub">اختر فئتك، وشاهد البطولة تتشكل أمامك مع كل اختيار</p>
     <div class="handle-row">
       <a class="handle-badge" href="https://instagram.com/superheroesar" target="_blank" rel="noopener">📸 @superheroesar</a>
-      <a class="handle-badge" href="https://x.com/superheroesar?s=11" target="_blank" rel="noopener">𝕏 @superheroesar</a>
+      <a class="handle-badge" href="https://x.com/superheroesar?s=11" target="_blank" rel="noopener">X @superheroesar</a>
     </div>
   </header>
 
@@ -411,7 +413,10 @@ function renderStage(){
   stage.innerHTML = '';
 
   const brand = el('stage-brand');
-  brand.innerHTML = '🏆 &nbsp;بطولة الأبطال &nbsp;·&nbsp; 📸𝕏 <span class="stage-brand-handle">@superheroesar</span> &nbsp;·&nbsp; SUPERHEROESAR.COM';
+  const seg1 = el('sb-seg'); seg1.setAttribute('dir','rtl'); seg1.textContent = '🏆 بطولة الأبطال';
+  const seg2 = el('sb-seg sb-handle'); seg2.setAttribute('dir','ltr'); seg2.textContent = 'X @superheroesar';
+  const seg3 = el('sb-seg'); seg3.setAttribute('dir','ltr'); seg3.textContent = 'SUPERHEROESAR.COM';
+  brand.appendChild(seg1); brand.appendChild(seg2); brand.appendChild(seg3);
   Object.assign(brand.style,{left:'0px', top:(STAGE_H-56)+'px', width:STAGE_W+'px'});
   stage.appendChild(brand);
 
@@ -488,7 +493,7 @@ function commitWinner(lvl, idx){
   const winnerNode = $('node-'+lvl+'-'+idx);
   const loserNode = $('node-'+lvl+'-'+otherIdx);
   if(winnerNode){ winnerNode.classList.remove('active','selected'); winnerNode.onclick = null; }
-  if(loserNode){ loserNode.classList.remove('active','selected'); loserNode.classList.add('lost'); loserNode.onclick = null; }
+  if(loserNode){ loserNode.classList.remove('active','selected'); loserNode.classList.add('lost'); loserNode.onclick = ()=> swapWinner(lvl, otherIdx); }
 
   const outLevel = lvl+1, outIdx = state.matchIndex;
   state.levelTexts[outLevel][outIdx] = text;
@@ -507,13 +512,27 @@ function commitWinner(lvl, idx){
   outNode.classList.remove('future');
   outNode.classList.add('done');
 
-  state.matchIndex++;
-  const roundSize = state.levelTexts[lvl].length;
-  if(state.matchIndex*2 >= roundSize){
-    state.round++; state.matchIndex = 0;
-    renderRoundStrip();
+  advanceToNextPending();
+}
+
+function findNextPendingMatch(){
+  for(let lvl=0; lvl<=3; lvl++){
+    const roundSize = state.levelTexts[lvl].length;
+    for(let m=0; m<roundSize/2; m++){
+      if(state.levelTexts[lvl+1][m] === null) return {round: lvl, matchIndex: m};
+    }
   }
-  setActiveMatch();
+  return null;
+}
+
+function advanceToNextPending(){
+  const next = findNextPendingMatch();
+  if(next){
+    state.round = next.round;
+    state.matchIndex = next.matchIndex;
+    renderRoundStrip();
+    setActiveMatch();
+  }
 }
 
 function revealChampion(name){
@@ -531,6 +550,74 @@ function revealChampion(name){
   $('championPanel').style.display = 'block';
   $('shareStatus').textContent = '';
   setTimeout(()=>{ $('championPanel').scrollIntoView({behavior:'smooth', block:'center'}); }, 250);
+}
+
+const DEFAULT_LINE_COLOR = '#AEB4C0';
+
+function resetChampionDisplay(){
+  const champ = $('championNode');
+  if(champ) champ.remove();
+  const trophy = el('node trophy');
+  trophy.id = 'trophyIcon';
+  trophy.textContent = '🏆';
+  placeBox(trophy, {x:CHAMPION_X,y:CHAMPION_Y,size:{w:60,h:60}});
+  $('stage').appendChild(trophy);
+  $('championPanel').style.display = 'none';
+}
+
+function cascadeInvalidate(level, idx){
+  if(level === 3){
+    if(state.levelTexts[4][0] !== null){
+      state.levelTexts[4][0] = null;
+      resetChampionDisplay();
+      markResolved(idx===0 ? 'F-L' : 'F-R', DEFAULT_LINE_COLOR);
+      return {level:3, idx:0};
+    }
+    return null;
+  }
+  const consumerIdx = Math.floor(idx/2);
+  const outLevel = level+1;
+  if(state.levelTexts[outLevel][consumerIdx] !== null){
+    cascadeInvalidate(outLevel, consumerIdx);
+    state.levelTexts[outLevel][consumerIdx] = null;
+    const node = $('node-'+outLevel+'-'+consumerIdx);
+    if(node){ node.textContent = '؟'; node.className = 'node mid future'; node.onclick = null; }
+    markResolved('L'+level+'-'+consumerIdx, DEFAULT_LINE_COLOR);
+    return {level: level, idx: consumerIdx};
+  }
+  return null;
+}
+
+/* Undo: clicking a previously-losing node promotes it to winner and rewinds
+   anything that was decided using the old winner. */
+function swapWinner(lvl, newWinnerIdx){
+  clearPending();
+  const otherIdx = newWinnerIdx % 2 === 0 ? newWinnerIdx+1 : newWinnerIdx-1;
+  const newWinnerText = state.levelTexts[lvl][newWinnerIdx];
+  const m = Math.floor(newWinnerIdx/2);
+  const outLevel = lvl+1;
+
+  const newWinnerNode = $('node-'+lvl+'-'+newWinnerIdx);
+  const newLoserNode = $('node-'+lvl+'-'+otherIdx);
+  if(newWinnerNode){ newWinnerNode.classList.remove('lost'); newWinnerNode.onclick = null; }
+  if(newLoserNode){ newLoserNode.classList.add('lost'); newLoserNode.onclick = ()=> swapWinner(lvl, otherIdx); }
+
+  state.levelTexts[outLevel][m] = newWinnerText;
+
+  if(outLevel === 4){
+    const champ = $('championNode');
+    if(champ) champ.textContent = newWinnerText;
+    $('winnerName').textContent = newWinnerText;
+    return;
+  }
+
+  const outNode = $('node-'+outLevel+'-'+m);
+  if(outNode) outNode.textContent = newWinnerText;
+
+  const rollback = cascadeInvalidate(outLevel, m);
+  if(rollback){
+    advanceToNextPending();
+  }
 }
 
 /* ---------- sharing ---------- */
