@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>بطولة الأبطال</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:#F7F6F2;
+    color:#171923;
+    font-family:'Tajawal',sans-serif;
+    min-height:100vh;
+  }
+  .display{ font-family:'Lalezar',sans-serif; font-weight:400; letter-spacing:.3px; }
+
+  .wrap{ max-width:1000px; margin:0 auto; padding:32px 14px 60px; }
+
+  header.top{ text-align:center; margin-bottom:26px; }
+  header.top .eyebrow{ font-size:12px; letter-spacing:3px; color:#E63946; font-weight:700; margin:0 0 6px; }
+  header.top h1{ font-size:clamp(30px,8vw,46px); margin:0; color:#171923; }
+  header.top .rule{ width:64px; height:5px; background:linear-gradient(90deg,#E63946,#1D4ED8); margin:14px auto 12px; border-radius:3px; }
+  header.top p.sub{ margin:0; font-size:14px; color:#5B6070; }
+
+  .screen{ display:none; }
+  .screen.active{ display:block; animation:fadeUp .35s ease; }
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+  /* category grid */
+  .cat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; max-width:480px; margin:0 auto; }
+  @media (max-width:420px){ .cat-grid{ grid-template-columns:1fr; } }
+  .cat-card{
+    background:#fff; border:1px solid #E7E5DE; border-top:5px solid var(--accent);
+    border-radius:14px; padding:22px 16px; text-align:center; cursor:pointer;
+    box-shadow:0 2px 10px rgba(20,20,30,.05);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .cat-card:active{ transform:scale(.97); }
+  .cat-card:hover{ transform:translateY(-3px); box-shadow:0 8px 20px rgba(20,20,30,.1); }
+  .cat-card .icon{ font-size:34px; display:block; margin-bottom:8px; }
+  .cat-card h3{ font-size:22px; margin:0 0 4px; color:#171923; }
+  .cat-card span.count{ font-size:11px; color:#8A8F9C; }
+  .c-comics{ --accent:#E63946; }
+  .c-movies{ --accent:#1D4ED8; }
+  .c-series{ --accent:#F5A623; }
+  .c-games{ --accent:#0FA968; }
+
+  /* bracket screen */
+  .bracket-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
+  .cat-tag{ font-size:13px; font-weight:700; color:#fff; background:var(--accent,#1D4ED8); padding:5px 12px; border-radius:20px; }
+  .ghost-btn{
+    font-size:12px; background:#fff; border:1px solid #DADCE2; color:#5B6070; padding:7px 12px;
+    border-radius:8px; cursor:pointer;
+  }
+  .ghost-btn:hover{ border-color:#B9BCC6; }
+
+  .round-strip{ display:flex; justify-content:center; gap:6px; margin-bottom:16px; }
+  .round-strip .dot{ flex:1; max-width:90px; height:6px; border-radius:4px; background:#E7E5DE; }
+  .round-strip .dot.active{ background:var(--accent,#1D4ED8); }
+  .round-strip .dot.done{ background:#171923; }
+
+  .stage-outer{ width:100%; overflow-x:auto; overflow-y:hidden; direction:ltr; -webkit-overflow-scrolling:touch; }
+  .scroll-hint{ text-align:center; font-size:11px; color:#8A8F9C; margin:8px 0 0; }
+  .stage-scaler{ transform-origin: top left; direction:ltr; }
+  .stage{
+    position:relative; width:1300px; height:1140px;
+    background:#FCFCFB;
+    border:1px solid #E7E5DE; border-radius:16px;
+  }
+  .line{ position:absolute; background:#AEB4C0; border-radius:2px; }
+  .node{
+    position:absolute; display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:4px 10px; color:#171923; border:1.5px solid #E2E4EA;
+    background:#fff; font-size:12.5px; line-height:1.2; border-radius:10px; font-weight:700;
+    box-shadow:0 1px 3px rgba(20,20,30,.05); overflow:hidden;
+    transition:box-shadow .2s ease, border-color .2s ease, transform .2s ease, background .2s ease;
+  }
+  .node.mid{ font-size:11.5px; }
+  .node.future{ color:#C3C6CE; border:1.5px dashed #E2E4EA; font-size:17px; font-weight:400; background:#FAFAF9; box-shadow:none; }
+  .node.done{ border-color:#D7DBE3; }
+  .node.lost{ opacity:.35; }
+  .node.active{
+    border-color:var(--accent,#1D4ED8); color:#171923; cursor:pointer; background:#fff;
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--accent,#1D4ED8) 18%, transparent), 0 6px 16px rgba(0,0,0,.1);
+    animation:pulse 1.3s infinite;
+  }
+  .node.active:hover{ transform:scale(1.05); }
+  @keyframes pulse{ 0%,100%{ box-shadow:0 0 0 4px color-mix(in srgb, var(--accent,#1D4ED8) 15%, transparent), 0 4px 10px rgba(0,0,0,.08);} 50%{ box-shadow:0 0 0 8px color-mix(in srgb, var(--accent,#1D4ED8) 8%, transparent), 0 4px 18px rgba(0,0,0,.14);} }
+  .node.trophy{ font-size:32px; border:none; background:none; box-shadow:none; }
+  .node.champion{
+    border-radius:14px; border:1.5px solid #171923; background:#171923;
+    color:#fff; font-size:18px; font-weight:900; box-shadow:0 8px 22px rgba(23,25,35,.25);
+    padding:8px 14px;
+  }
+
+  .champion-panel{ text-align:center; margin-top:24px; }
+  .champion-panel .eyebrow{ font-size:12px; letter-spacing:3px; color:#E63946; font-weight:700; }
+  .champ-card{ background:#fff; border:2px solid #171923; border-radius:20px; padding:30px 20px; margin:14px auto 22px; max-width:360px; }
+  .champ-card .trophy-big{ font-size:40px; display:block; margin-bottom:8px; }
+  .winner-name{ font-family:'Lalezar',sans-serif; font-size:clamp(26px,7vw,36px); margin:0; color:#171923; }
+  .winner-tag{ font-size:13px; color:#8A8F9C; margin-top:6px; }
+  .btn-row{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  .primary-btn{
+    font-family:'Lalezar',sans-serif; font-size:17px; background:#171923; color:#fff;
+    border:none; padding:12px 26px; border-radius:10px; cursor:pointer;
+  }
+  .primary-btn:hover{ background:#000; }
+  .secondary-btn{
+    font-size:13px; background:#fff; border:1px solid #DADCE2; color:#5B6070; padding:11px 20px;
+    border-radius:10px; cursor:pointer;
+  }
+  .share-status{ font-size:12px; color:#8A8F9C; margin-top:14px; min-height:16px; }
+
+  footer.brand{ text-align:center; margin-top:44px; font-size:11px; letter-spacing:1px; color:#B9BCC6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <p class="eyebrow">SUPERHEROESAR PRESENTS</p>
+    <h1 class="display">بطولة الأبطال</h1>
+    <div class="rule"></div>
+    <p class="sub">اختر فئتك، وشاهد البطولة تتشكل أمامك مع كل اختيار</p>
+  </header>
+
+  <section id="screen-categories" class="screen active">
+    <div class="cat-grid" id="catGrid"></div>
+  </section>
+
+  <section id="screen-bracket" class="screen">
+    <div class="bracket-header">
+      <span class="cat-tag" id="catTag"></span>
+      <button class="ghost-btn" id="backBtn">فئة أخرى</button>
+    </div>
+    <div class="round-strip" id="roundStrip"></div>
+    <div class="stage-outer" id="stageOuter">
+      <div class="stage-scaler" id="stageScaler">
+        <div class="stage" id="stage"></div>
+      </div>
+    </div>
+    <p class="scroll-hint" id="scrollHint" style="display:none;">مرّر يميناً ويساراً لعرض باقي الجدول ↔</p>
+
+    <div class="champion-panel" id="championPanel" style="display:none;">
+      <p class="eyebrow">البطل الأعظم</p>
+      <div class="champ-card" id="champCard">
+        <span class="trophy-big">🏆</span>
+        <h2 class="winner-name" id="winnerName">—</h2>
+        <p class="winner-tag" id="winnerCat"></p>
+      </div>
+      <div class="btn-row">
+        <button class="primary-btn" id="shareBtn">مشاركة النتيجة</button>
+        <button class="secondary-btn" id="replayBtn">إعادة نفس الفئة</button>
+      </div>
+      <p class="share-status" id="shareStatus"></p>
+    </div>
+  </section>
+
+  <footer class="brand">SUPERHEROESAR.COM · بطولة الأبطال</footer>
+</div>
+
+<script>
+/* ---------- data ---------- */
+const DATA = {
+  comics: { label:"كومكس", icon:"💥", accentClass:"c-comics", accent:"#E63946", items:[
+    "Spider-Man","Batman","Superman","Wonder Woman","Iron Man","Captain America","Thor","Hulk",
+    "Black Panther","Wolverine","Deadpool","The Flash","Green Lantern","Aquaman","Joker","Thanos",
+    "Doctor Strange","Black Widow","Hawkeye","Ant-Man","Vision","Scarlet Witch","Nightwing","Cyborg",
+    "Shazam","Daredevil","Punisher","Ghost Rider","Silver Surfer","Nova","Star-Lord","Rocket Raccoon",
+    "Groot","Gambit","Cyclops","Jean Grey","Storm","Beast","Nightcrawler","Colossus",
+    "Magneto","Professor X","Venom","Carnage","Loki","Ultron","Bane","Two-Face",
+    "Harley Quinn","Catwoman","Lex Luthor","Darkseid","Green Arrow","Martian Manhunter","Doctor Doom",
+    "Red Skull","Kingpin","Mysterio","Green Goblin","Sandman","Rhino","Doctor Octopus",
+    "Elektra","Moon Knight","Blade","Iron Fist","Luke Cage","Jessica Jones","She-Hulk",
+    "Falcon","War Machine","Winter Soldier","Quicksilver","Hawkgirl","Zatanna","Constantine",
+    "Swamp Thing","Lobo","Deathstroke","Ra's al Ghul","Poison Ivy","Riddler","Penguin",
+    "Scarecrow","Mr. Freeze","Clayface","Firestorm","Booster Gold","Blue Beetle","Static Shock",
+    "Captain Marvel","Ms. Marvel","Spider-Gwen","Miles Morales","X-23","Emma Frost","Mystique",
+    "Apocalypse","Sabretooth","Juggernaut"
+  ]},
+  movies: { label:"أفلام", icon:"🎬", accentClass:"c-movies", accent:"#1D4ED8", items:[
+    "The Godfather","The Matrix","The Dark Knight","Inception","Interstellar","Pulp Fiction",
+    "Fight Club","Forrest Gump","The Shawshank Redemption","Gladiator","Titanic","Jurassic Park",
+    "Avatar","The Avengers","Iron Man","Joker","Parasite","La La Land","The Lion King","Toy Story",
+    "Finding Nemo","Shrek","The Lord of the Rings","Star Wars","Jaws","Back to the Future","Rocky",
+    "Terminator 2","Die Hard","The Silence of the Lambs","Goodfellas","Se7en","No Country for Old Men",
+    "Whiplash","La Haine","City of God","Amélie","Spirited Away","The Green Mile","Gravity",
+    "Mad Max: Fury Road","Blade Runner 2049","Dune","Oppenheimer","Coco","Up","WALL-E",
+    "The Incredibles","Mission: Impossible","John Wick","Top Gun: Maverick","Django Unchained",
+    "The Prestige","Memento","The Departed","Casino","Scarface","Heat","The Wolf of Wall Street",
+    "American Beauty","A Beautiful Mind","The Truman Show","Good Will Hunting","Braveheart",
+    "Saving Private Ryan","Schindler's List","The Pianist","12 Angry Men","The Grand Budapest Hotel",
+    "Kill Bill","Reservoir Dogs","Inglourious Basterds","Once Upon a Time in Hollywood",
+    "The Hateful Eight","Get Out","Us","A Quiet Place","Hereditary","The Conjuring","It",
+    "The Shining","Alien","Aliens","Predator","RoboCop","The Terminator","Edge of Tomorrow",
+    "Arrival","Ex Machina","Her","Children of Men","Minority Report","Inside Out","Ratatouille",
+    "Monsters, Inc.","Zootopia","Big Hero 6","How to Train Your Dragon","Kung Fu Panda","The Karate Kid"
+  ]},
+  series: { label:"مسلسلات", icon:"📺", accentClass:"c-series", accent:"#F5A623", items:[
+    "Breaking Bad","Game of Thrones","Stranger Things","The Sopranos","The Wire","Friends",
+    "The Office","Sherlock","Dark","Squid Game","Peaky Blinders","The Crown","Chernobyl",
+    "Better Call Saul","The Mandalorian","House of Cards","True Detective","Fargo","Westworld",
+    "Narcos","Vikings","The Walking Dead","Lost","Prison Break","How I Met Your Mother",
+    "The Big Bang Theory","Suits","Dexter","Black Mirror","The Last of Us","Succession","Ozark",
+    "The Boys","Euphoria","Rick and Morty","Attack on Titan","Death Note","Naruto","One Piece",
+    "Demon Slayer","Fullmetal Alchemist","Twin Peaks","Band of Brothers","The X-Files",
+    "Grey's Anatomy","Modern Family","Seinfeld","It's Always Sunny in Philadelphia","Community",
+    "Yellowstone","Bridgerton","The Last Kingdom","The Blacklist","The Handmaid's Tale",
+    "House","Scrubs","Parks and Recreation","Arrested Development","30 Rock","Brooklyn Nine-Nine",
+    "Money Heist","Élite","Lupin","The Umbrella Academy","Wednesday","You","Mindhunter",
+    "Sons of Anarchy","Homeland","24","The Americans","Boardwalk Empire","Mad Men","Downton Abbey",
+    "Doctor Who","Supernatural","Smallville","Arrow","The Flash","Gotham","Daredevil","Luke Cage",
+    "Jessica Jones","WandaVision","Loki","Moon Knight","Ted Lasso","Fleabag","Killing Eve",
+    "Broadchurch","Line of Duty","Big Little Lies","Sharp Objects","The Night Of","Mare of Easttown",
+    "Severance","The White Lotus","Only Murders in the Building","Abbott Elementary","Shōgun"
+  ]},
+  games: { label:"ألعاب", icon:"🎮", accentClass:"c-games", accent:"#0FA968", items:[
+    "The Last of Us","God of War","The Witcher 3","Red Dead Redemption 2","Grand Theft Auto V",
+    "Elden Ring","Dark Souls","Bloodborne","Zelda: Breath of the Wild","Super Mario Odyssey",
+    "Halo","Call of Duty","FIFA","Minecraft","Fortnite","Overwatch","League of Legends","Dota 2",
+    "Counter-Strike","Valorant","Cyberpunk 2077","Assassin's Creed","Metal Gear Solid",
+    "Resident Evil","Silent Hill","Final Fantasy VII","Persona 5","Sekiro","Horizon Zero Dawn",
+    "Uncharted","Ghost of Tsushima","Death Stranding","Portal 2","Half-Life 2","BioShock",
+    "Mass Effect","Skyrim","Fallout 4","Diablo","World of Warcraft","Animal Crossing",
+    "Stardew Valley","Hollow Knight","Celeste","Among Us","Rocket League","Apex Legends","PUBG",
+    "Street Fighter","Tekken","Mortal Kombat","Kingdom Hearts","Inside","Limbo","Far Cry",
+    "Battlefield","Rainbow Six Siege","Splatoon","Super Smash Bros","Mario Kart",
+    "Donkey Kong Country","Metroid","Pokémon","Sonic the Hedgehog","Crash Bandicoot",
+    "Spyro the Dragon","Ratchet & Clank","God of War Ragnarök","Marvel's Spider-Man",
+    "Batman: Arkham City","Injustice 2","NBA 2K","Madden NFL","Gran Turismo","Forza Horizon",
+    "Need for Speed","F1","Titanfall 2","Doom Eternal","Wolfenstein","Dying Light","Days Gone",
+    "Control","Alan Wake","Hades","Disco Elysium","Baldur's Gate 3","Divinity: Original Sin 2",
+    "Diablo IV","World of Tanks","StarCraft","Age of Empires","Civilization VI","The Sims",
+    "Cities: Skylines","Terraria","Subnautica","No Man's Sky","It Takes Two","A Way Out"
+  ]}
+};
+
+const ROUND_LABELS = ["الدور الأول","دور الثمانية","نصف النهائي","النهائي"];
+const SHARE_HANDLE = "@superheroesar";
+
+/* ---------- geometry ---------- */
+const STAGE_W = 1300, STAGE_H = 1140;
+const LEAF_Y = [70,210,350,490,630,770,910,1050];
+const XL = [90,260,400,510];
+const XR = [1210,1040,900,790];
+const CHAMPION_X = 650;
+
+function avgPairs(arr){ const out=[]; for(let i=0;i<arr.length;i+=2) out.push((arr[i]+arr[i+1])/2); return out; }
+const Y = [LEAF_Y];
+Y.push(avgPairs(Y[0]));
+Y.push(avgPairs(Y[1]));
+Y.push(avgPairs(Y[2]));
+const CHAMPION_Y = Y[3][0];
+
+const SIZES = [ {w:150,h:56}, {w:126,h:54}, {w:106,h:50}, {w:94,h:48} ];
+const CHAMPION_SIZE = {w:150,h:66};
+
+function nodeGeo(level, idx){
+  const size = SIZES[level];
+  const levelSize = [16,8,4,2][level];
+  const half_ = levelSize/2;
+  const side = idx < half_ ? 'L' : 'R';
+  const pos = idx < half_ ? idx : idx-half_;
+  const x = side==='L' ? XL[level] : XR[level];
+  const y = Y[level][pos];
+  return {x,y,side,size};
+}
+
+/* ---------- state ---------- */
+let state = null;
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function $(id){ return document.getElementById(id); }
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function buildCategoryGrid(){
+  const grid = $('catGrid');
+  grid.innerHTML = '';
+  Object.entries(DATA).forEach(([key,cat])=>{
+    const card = document.createElement('div');
+    card.className = 'cat-card ' + cat.accentClass;
+    card.innerHTML = `
+      <span class="icon">${cat.icon}</span>
+      <h3 class="display">${cat.label}</h3>
+      <span class="count">16 من ${cat.items.length}+ عشوائياً</span>
+    `;
+    card.addEventListener('click', ()=>startCategory(key));
+    grid.appendChild(card);
+  });
+}
+
+/* ---------- responsive scaling ---------- */
+const MIN_STAGE_SCALE = 0.62;
+function fitStage(){
+  const outer = $('stageOuter');
+  const scaler = $('stageScaler');
+  if(!outer || !scaler) return;
+  const fitScale = outer.clientWidth / STAGE_W;
+  const scale = Math.min(1, Math.max(fitScale, MIN_STAGE_SCALE));
+  scaler.style.transform = `scale(${scale})`;
+  outer.style.height = (STAGE_H * scale) + 'px';
+  const hint = $('scrollHint');
+  if(hint) hint.style.display = (scale > fitScale + 0.001) ? 'block' : 'none';
+}
+window.addEventListener('resize', fitStage);
+
+/* ---------- bracket lifecycle ---------- */
+function startCategory(key){
+  const cat = DATA[key];
+  const chosen = shuffle(cat.items).slice(0,16);
+
+  state = {
+    key,
+    levelTexts: [ chosen, new Array(8).fill(null), new Array(4).fill(null), new Array(2).fill(null), new Array(1).fill(null) ],
+    round: 0,
+    matchIndex: 0
+  };
+
+  $('catTag').textContent = cat.label;
+  $('catTag').style.setProperty('--accent', cat.accent);
+  $('championPanel').style.display = 'none';
+  $('shareStatus').textContent = '';
+  showScreen('screen-bracket');
+  renderStage();
+  renderRoundStrip();
+  setActiveMatch();
+  requestAnimationFrame(fitStage);
+}
+
+function renderRoundStrip(){
+  const strip = $('roundStrip');
+  strip.innerHTML = '';
+  ROUND_LABELS.forEach((label,i)=>{
+    const dot = document.createElement('span');
+    dot.className = 'dot';
+    dot.style.setProperty('--accent', DATA[state.key].accent);
+    if(i < state.round) dot.classList.add('done');
+    if(i === state.round) dot.classList.add('active');
+    strip.appendChild(dot);
+  });
+}
+
+function el(cls){ const e=document.createElement('div'); if(cls) e.className=cls; return e; }
+function placeBox(node, geo, extraW, extraH){
+  const w = (extraW||geo.size.w), h = (extraH||geo.size.h);
+  node.style.left = (geo.x - w/2) + 'px';
+  node.style.top = (geo.y - h/2) + 'px';
+  node.style.width = w + 'px';
+  node.style.height = h + 'px';
+}
+function drawElbow(stage, x1,yA,yB,x2, connKey){
+  const xmid = (x1+x2)/2;
+  const cls = 'line conn-'+connKey;
+  const left = Math.min(x1,xmid), width1 = Math.abs(xmid-x1);
+  const lineA = el(cls); Object.assign(lineA.style,{left:left+'px', top:(yA-1)+'px', width:width1+'px', height:'2.5px'});
+  const lineB = el(cls); Object.assign(lineB.style,{left:left+'px', top:(yB-1)+'px', width:width1+'px', height:'2.5px'});
+  const top = Math.min(yA,yB), heightV = Math.abs(yB-yA);
+  const lineV = el(cls); Object.assign(lineV.style,{left:(xmid-1)+'px', top:top+'px', width:'2.5px', height:heightV+'px'});
+  const y2 = (yA+yB)/2;
+  const right = Math.min(xmid,x2), width2 = Math.abs(x2-xmid);
+  const lineC = el(cls); Object.assign(lineC.style,{left:right+'px', top:(y2-1)+'px', width:width2+'px', height:'2.5px'});
+  stage.appendChild(lineA); stage.appendChild(lineB); stage.appendChild(lineV); stage.appendChild(lineC);
+}
+function drawStraight(stage, x1,y1,x2,y2, connKey){
+  const left = Math.min(x1,x2), width = Math.abs(x2-x1);
+  const line = el('line conn-'+connKey); Object.assign(line.style,{left:left+'px', top:(y1-1.25)+'px', width:width+'px', height:'2.5px'});
+  stage.appendChild(line);
+}
+function markResolved(connKey, color){
+  document.querySelectorAll('.conn-'+connKey).forEach(l=>{ l.style.background = color; });
+}
+
+function renderStage(){
+  const stage = $('stage');
+  stage.innerHTML = '';
+
+  for(let lvl=0; lvl<3; lvl++){
+    const levelSize = state.levelTexts[lvl].length;
+    for(let m=0; m<levelSize/2; m++){
+      const gA = nodeGeo(lvl, 2*m), gB = nodeGeo(lvl, 2*m+1);
+      const gOut = nodeGeo(lvl+1, m);
+      drawElbow(stage, gA.x, gA.y, gB.y, gOut.x, 'L'+lvl+'-'+m);
+    }
+  }
+  const gL3 = nodeGeo(3,0), gR3 = nodeGeo(3,1);
+  drawStraight(stage, gL3.x, gL3.y, CHAMPION_X, CHAMPION_Y, 'F-L');
+  drawStraight(stage, gR3.x, gR3.y, CHAMPION_X, CHAMPION_Y, 'F-R');
+
+  const trophy = el('node trophy');
+  trophy.id = 'trophyIcon';
+  trophy.textContent = '🏆';
+  placeBox(trophy, {x:CHAMPION_X,y:CHAMPION_Y,size:{w:60,h:60}});
+  stage.appendChild(trophy);
+
+  for(let lvl=0; lvl<4; lvl++){
+    state.levelTexts[lvl].forEach((text, idx)=>{
+      const geo = nodeGeo(lvl, idx);
+      const node = el('node' + (lvl===0 ? ' leaf' : ' mid'));
+      node.id = 'node-'+lvl+'-'+idx;
+      if(text){ node.textContent = text; node.classList.add('done'); }
+      else { node.textContent = '؟'; node.classList.add('future'); }
+      placeBox(node, geo);
+      stage.appendChild(node);
+    });
+  }
+}
+
+function setActiveMatch(){
+  document.querySelectorAll('.node.active').forEach(n=>n.classList.remove('active'));
+  const lvl = state.round, m = state.matchIndex;
+  const accent = DATA[state.key].accent;
+  [2*m, 2*m+1].forEach(idx=>{
+    const node = $('node-'+lvl+'-'+idx);
+    if(node){
+      node.classList.add('active');
+      node.classList.remove('lost');
+      node.style.setProperty('--accent', accent);
+      node.onclick = ()=> pickWinner(lvl, idx);
+    }
+  });
+}
+
+function pickWinner(lvl, idx){
+  const text = state.levelTexts[lvl][idx];
+  const otherIdx = idx % 2 === 0 ? idx+1 : idx-1;
+  const winnerNode = $('node-'+lvl+'-'+idx);
+  const loserNode = $('node-'+lvl+'-'+otherIdx);
+  if(winnerNode) winnerNode.classList.remove('active');
+  if(loserNode){ loserNode.classList.remove('active'); loserNode.classList.add('lost'); }
+
+  const outLevel = lvl+1, outIdx = state.matchIndex;
+  state.levelTexts[outLevel][outIdx] = text;
+  const accent = DATA[state.key].accent;
+
+  if(outLevel === 4){
+    markResolved(idx===0 ? 'F-L' : 'F-R', accent);
+    revealChampion(text);
+    return;
+  }
+
+  markResolved('L'+lvl+'-'+outIdx, accent);
+
+  const outNode = $('node-'+outLevel+'-'+outIdx);
+  outNode.textContent = text;
+  outNode.classList.remove('future');
+  outNode.classList.add('done');
+
+  state.matchIndex++;
+  const roundSize = state.levelTexts[lvl].length;
+  if(state.matchIndex*2 >= roundSize){
+    state.round++; state.matchIndex = 0;
+    renderRoundStrip();
+  }
+  setActiveMatch();
+}
+
+function revealChampion(name){
+  renderRoundStrip();
+  const trophy = $('trophyIcon');
+  if(trophy) trophy.remove();
+  const champ = el('node champion');
+  champ.id = 'championNode';
+  champ.textContent = name;
+  placeBox(champ, {x:CHAMPION_X,y:CHAMPION_Y,size:CHAMPION_SIZE}, CHAMPION_SIZE.w, CHAMPION_SIZE.h);
+  $('stage').appendChild(champ);
+
+  $('winnerName').textContent = name;
+  $('winnerCat').textContent = 'بطل فئة ' + DATA[state.key].label;
+  $('championPanel').style.display = 'block';
+  $('shareStatus').textContent = '';
+  setTimeout(()=>{ $('championPanel').scrollIntoView({behavior:'smooth', block:'center'}); }, 250);
+}
+
+/* ---------- sharing ---------- */
+function buildCaption(){
+  const name = $('winnerName').textContent;
+  const catLabel = DATA[state.key].label;
+  return `توّج "${name}" بطل بطولتي في فئة ${catLabel}! 🏆\nجرّب حظك في التحدي مع ${SHARE_HANDLE}\n#بطولة_الأبطال`;
+}
+async function shareResult(){
+  const status = $('shareStatus');
+  status.textContent = 'جارٍ تجهيز الصورة...';
+  try{
+    const canvas = await html2canvas($('stage'), {backgroundColor:'#FCFCFB', scale:2});
+    const caption = buildCaption();
+    canvas.toBlob(async (blob)=>{
+      const file = new File([blob], 'بطولة-الأبطال.png', {type:'image/png'});
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        try{
+          await navigator.share({ files:[file], text: caption, title:'بطولة الأبطال' });
+          status.textContent = 'تمت المشاركة.';
+          return;
+        }catch(e){ /* fall through to download */ }
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'بطولة-الأبطال.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      try{
+        await navigator.clipboard.writeText(caption);
+        status.textContent = 'تم تحميل الصورة، ونسخ نص المشاركة إلى الحافظة.';
+      }catch(e){
+        status.textContent = 'تم تحميل الصورة. انسخ هذا النص عند النشر: ' + caption;
+      }
+    }, 'image/png');
+  }catch(err){
+    status.textContent = 'تعذّر إنشاء الصورة، حاول مرة أخرى.';
+  }
+}
+
+$('backBtn').addEventListener('click', ()=> showScreen('screen-categories'));
+$('replayBtn').addEventListener('click', ()=> startCategory(state.key));
+$('shareBtn').addEventListener('click', shareResult);
+
+buildCategoryGrid();
+</script>
+</body>
+</html>
