@@ -76,12 +76,12 @@
   .node{
     position:absolute; display:flex; align-items:center; justify-content:center;
     text-align:center; padding:4px 10px; color:#171923; border:1.5px solid #E2E4EA;
-    background:#fff; font-size:12.5px; line-height:1.2; border-radius:10px; font-weight:700;
+    background:#fff; font-size:14.5px; line-height:1.22; border-radius:10px; font-weight:700;
     box-shadow:0 1px 3px rgba(20,20,30,.05); overflow:hidden;
     transition:box-shadow .2s ease, border-color .2s ease, transform .2s ease, background .2s ease;
   }
-  .node.mid{ font-size:11.5px; }
-  .node.future{ color:#C3C6CE; border:1.5px dashed #E2E4EA; font-size:17px; font-weight:400; background:#FAFAF9; box-shadow:none; }
+  .node.mid{ font-size:13.5px; }
+  .node.future{ color:#C3C6CE; border:1.5px dashed #E2E4EA; font-size:18px; font-weight:400; background:#FAFAF9; box-shadow:none; }
   .node.done{ border-color:#D7DBE3; }
   .node.lost{ opacity:.35; }
   .node.active{
@@ -257,7 +257,7 @@ Y.push(avgPairs(Y[1]));
 Y.push(avgPairs(Y[2]));
 const CHAMPION_Y = Y[3][0];
 
-const SIZES = [ {w:150,h:56}, {w:126,h:54}, {w:106,h:50}, {w:94,h:48} ];
+const SIZES = [ {w:150,h:56}, {w:126,h:54}, {w:106,h:50}, {w:112,h:58} ];
 const CHAMPION_SIZE = {w:150,h:66};
 
 function nodeGeo(level, idx){
@@ -303,7 +303,7 @@ function buildCategoryGrid(){
 }
 
 /* ---------- responsive scaling ---------- */
-const MIN_STAGE_SCALE = 0.62;
+const MIN_STAGE_SCALE = 0.88;
 function fitStage(){
   const outer = $('stageOuter');
   const scaler = $('stageScaler');
