@@ -26,8 +26,9 @@
   header.top h1{ font-size:clamp(30px,8vw,46px); margin:0; color:#171923; }
   header.top .rule{ width:64px; height:5px; background:linear-gradient(90deg,#E63946,#1D4ED8); margin:14px auto 12px; border-radius:3px; }
   header.top p.sub{ margin:0; font-size:14px; color:#5B6070; }
+  .handle-row{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:14px; }
   .handle-badge{
-    display:inline-block; margin-top:14px; font-size:12.5px; font-weight:700; color:#171923;
+    display:inline-block; font-size:12.5px; font-weight:700; color:#171923;
     background:#fff; border:1.5px solid #171923; border-radius:20px; padding:6px 16px;
     text-decoration:none;
   }
@@ -143,7 +144,10 @@
     <h1 class="display">بطولة الأبطال</h1>
     <div class="rule"></div>
     <p class="sub">اختر فئتك، وشاهد البطولة تتشكل أمامك مع كل اختيار</p>
-    <a class="handle-badge" href="https://instagram.com/superheroesar" target="_blank" rel="noopener">@superheroesar</a>
+    <div class="handle-row">
+      <a class="handle-badge" href="https://instagram.com/superheroesar" target="_blank" rel="noopener">📸 @superheroesar</a>
+      <a class="handle-badge" href="https://x.com/superheroesar?s=11" target="_blank" rel="noopener">𝕏 @superheroesar</a>
+    </div>
   </header>
 
   <section id="screen-categories" class="screen active">
@@ -407,7 +411,7 @@ function renderStage(){
   stage.innerHTML = '';
 
   const brand = el('stage-brand');
-  brand.innerHTML = '🏆 &nbsp;بطولة الأبطال &nbsp;·&nbsp; <span class="stage-brand-handle">@superheroesar</span> &nbsp;·&nbsp; SUPERHEROESAR.COM';
+  brand.innerHTML = '🏆 &nbsp;بطولة الأبطال &nbsp;·&nbsp; 📸𝕏 <span class="stage-brand-handle">@superheroesar</span> &nbsp;·&nbsp; SUPERHEROESAR.COM';
   Object.assign(brand.style,{left:'0px', top:(STAGE_H-56)+'px', width:STAGE_W+'px'});
   stage.appendChild(brand);
 
